@@ -3,7 +3,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using RestSharp;
 using SdetChallengeAutomation.Models;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace SdetChallengeAutomation.Features
@@ -56,17 +58,34 @@ namespace SdetChallengeAutomation.Features
                .AddParameter("$offset", "0");
 
             var content = client.Execute(request).Content;
-            
-            var weatherMeasurements = JsonSerializer.Deserialize<List<WeatherMeasurement>>(content,
+
+            var weatherMeasurementsFirstPage = JsonSerializer.Deserialize<List<WeatherMeasurement>>(content,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var requestSecondPage = new RestRequest("", Method.Get)
+                .AddParameter("station_name", "63rd Street Weather Station")
+                .AddParameter("$$app_token", "ZwPceGweiii8qzm2P4epN9yau")
+                .AddParameter("$where", "measurement_timestamp>'2019-01-01T00:00:00.000' AND measurement_timestamp<'2020-01-01T00:00:00.000'")
+                .AddParameter("$order", "measurement_timestamp ASC")
+                .AddParameter("$limit", "10")
+                .AddParameter("$offset", "10");
+
+            var contentSecondPage = client.Execute(requestSecondPage).Content;
+
+            var weatherMeasurementsSecondPage = JsonSerializer.Deserialize<List<WeatherMeasurement>>(contentSecondPage,
+                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var firstPageList = weatherMeasurementsFirstPage.Except(weatherMeasurementsSecondPage).ToList();
+
+            Assert.AreEqual(firstPageList.Count, weatherMeasurementsFirstPage.Count);
 
         }
 
     }
 
 }       /*Story 3: As a user of the API I expect a SoQL query to fail with an error message if I
-             search using a malformed query. Note: This is a negative test. We want to make sure that the API throws an
-            error when expected.
+             search using a malformed query. Note: This is a negative test. We want to make sure that 
+            the API throws an error when expected.
             GIVEN ALL BEACH WEATHER STATION SENSOR DATA OF THE STATION ON 63RD STREET
             WHEN THE USER REQUESTS SENSOR DATA BY QUERYING BATTERY_LIFE VALUES THAT ARE LESS THAN THE
             TEXT “FULL” ($WHERE=BATTERY_LIFE < FULL)
