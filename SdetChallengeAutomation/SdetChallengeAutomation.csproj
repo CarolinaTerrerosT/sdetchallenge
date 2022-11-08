@@ -139,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Features\ApiTest.cs" />
+    <Compile Include="Models\Error.cs" />
     <Compile Include="Models\WeatherMeasurement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

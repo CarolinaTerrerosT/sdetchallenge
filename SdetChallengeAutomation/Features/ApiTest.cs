@@ -18,7 +18,7 @@ namespace SdetChallengeAutomation.Features
         public void List_Station_ReturnsAllMeasurements()
         {
             var client = new RestClient("https://data.cityofchicago.org/resource/k7hf-8y75.json");
-
+            
             var request = new RestRequest("", Method.Get)
                 .AddParameter("station_name", "Oak Street")
                 .AddParameter("$$app_token", "ZwPceGweiii8qzm2P4epN9yau");
@@ -30,7 +30,7 @@ namespace SdetChallengeAutomation.Features
 
             foreach (var weatherMeasurement in weatherMeasurements)
             {
-                Assert.AreEqual(weatherMeasurement.station_name, "Oak Street");
+                Assert.AreEqual("Oak Street", weatherMeasurement.station_name);
             }
         } 
 
@@ -67,16 +67,34 @@ namespace SdetChallengeAutomation.Features
 
             var firstPageList = weatherMeasurementsFirstPage.Except(weatherMeasurementsSecondPage).ToList();
 
-            Assert.AreEqual(firstPageList.Count, weatherMeasurementsFirstPage.Count);
+            Assert.AreEqual(weatherMeasurementsFirstPage.Count, firstPageList.Count);
 
         }
 
 
-
         [TestMethod]
-        public void Fail_MalformedQuery_ErrorMessage()
+        public void SendRequest_WithMalformedQuery_ReturnErrorMessage()
         {
-            //I need to complete the functionality yet
+            var client = new RestClient("https://data.cityofchicago.org/resource/k7hf-8y75.json");
+
+            var request = new RestRequest("", Method.Get)
+
+                .AddParameter("$$app_token", "ZwPceGweiii8qzm2P4epN9yau")
+                .AddParameter("$where", "battery_life < full");
+
+            var response = client.Execute(request);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+
+                var error = JsonSerializer.Deserialize<Error>(response.Content,
+                   new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Assert.AreEqual("query.compiler.malformed", error.code);
+                Assert.IsTrue(error.message.Contains("Could not parse SoQL query"));
+            }
+
+
         }
 
     }
